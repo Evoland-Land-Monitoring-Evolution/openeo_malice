@@ -1,0 +1,28 @@
+#+TITLE: openeo_malice
+
+[[file:artwork/logo-Evoland-positive.png]]
+
+This repository is part of the [[https://www.evo-land.eu/][EVOLAND Horizon Europe]] project.
+It provides a User Defined Function to extract Sentinel-2 or Sentinel-1 satellite image time series embeddings with MALICE model.
+The input time series can have any length, although it is not recommended to overcome 18 months. The output embeddings have fixed size of 10 x 64 x H x W
+
+The respository include the [[file:src/openeo_malice/udf.py][User Defined Function]] implemented using a ONNX export of the best model, as well as a [[file:src/openeo_superresolution/run.py][runtime script]] allowing to use it with your OpenEO account.
+
+* Installation
+#+begin_src shell
+$ pip install -e git+https://github.com/ekalinicheva/openeo_malice.git
+#+end_src
+
+* Usage
+#+begin_src shell
+$ run_openeo_malice --satellite s1_asc --start_date 2020-07-05 --end_date 2020-08-30 --extent 5.1 5.12 51 51.02 --output results/
+#+end_src
+
+* Credits
+
+Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union or the European Commission. Neither the European Union nor the European Commission can be held responsible for them.
+
+* Note
+
+This project has been set up using PyScaffold 4.5. For details and usage
+information on PyScaffold see https://pyscaffold.org/.
