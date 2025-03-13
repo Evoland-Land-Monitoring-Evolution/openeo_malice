@@ -15,7 +15,6 @@ from openeo.metadata import CollectionMetadata
 from openeo.udf import XarrayDataCube
 
 NEW_BANDS = [f"F0{i}" for i in range(10)] + [f"F{i}" for i in range(10, 64)]
-
 NEW_DATES = [f"D0{i}" for i in range(10)]
 
 
@@ -51,6 +50,21 @@ def normalize_s2(input_data: np.ndarray) -> np.ndarray:
     return np.nan_to_num((input_data - med[None, :, None, None]) / scale[None, :, None, None])
 
 
+def prepare_s2_input(input_data: np.ndarray, doy: np.ndarray) -> Dict[str, np.ndarray]:
+    """We transform input data in right format for the model"""
+
+    input_data = normalize_s2(input_data)
+
+    reference_date = "2014-03-03"
+
+    # Relative DOY to the reference date
+    doy = (pd.to_datetime(doy) - pd.to_datetime(reference_date)).days
+
+    return {"sits": input_data.astype(np.float32)[None, ...],
+            "tpe": np.array(doy)[None, ...].astype(np.float32),
+            "padd_mask": np.zeros((1, input_data.shape[0]), dtype=bool)}
+
+
 def run_inference(input_data: np.ndarray, doy: np.ndarray) -> np.ndarray:
     """
     Inference function for Sentinel-2 embeddings with MALICE.
@@ -77,23 +91,11 @@ def run_inference(input_data: np.ndarray, doy: np.ndarray) -> np.ndarray:
 
     ro = ort.RunOptions()
     ro.add_run_config_entry("log_severity_level", "3")
-
-    # We transform input data in right format
-    input_data = normalize_s2(input_data)
-
-    reference_date = "2014-03-03"
-
-    doy = (pd.to_datetime(doy) - pd.to_datetime(reference_date)).days
-
-    input = {"sits": input_data.astype(np.float32)[None, ...],
-             "tpe": np.array(doy)[None, ...].astype(np.float32),
-             "padd_mask": np.zeros((1, input_data.shape[0]), dtype=bool)}
+    input_model = prepare_s2_input(input_data, doy)
 
     # Get the ouput of the exported model
-    res = ort_session.run(None, input, run_options=ro)[0][0]
-    print(res.shape)
+    return ort_session.run(None, input_model, run_options=ro)[0][0].astype(np.float32)
 
-    return res
 
 
 def apply_datacube(cube: XarrayDataCube, context: Dict) -> XarrayDataCube:

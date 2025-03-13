@@ -46,8 +46,8 @@ class Parameters:
     openeo_instance: str = "openeo.vito.be"
     collection: str = "SENTINEL2_L2A"
     satellite: str = "s2"
-    patch_size: int = 128
-    overlap: Optional[int] = None
+    patch_size: int = 64
+    overlap: Optional[int] = 0
 
 
 def process(parameters: Parameters, output: str) -> None:
@@ -75,7 +75,8 @@ def process(parameters: Parameters, output: str) -> None:
             spatial_extent=parameters.spatial_extent,
             temporal_extent=[parameters.start_date, parameters.end_date],
             bands=default_bands_list(parameters.satellite),
-            fetch_metadata=True
+            fetch_metadata=True,
+            properties={"sat:orbit_state": lambda od: od == "ASCENDING"}
         ).sar_backscatter(
             coefficient="gamma0-terrain",
             elevation_model=None,
@@ -103,8 +104,8 @@ def process(parameters: Parameters, output: str) -> None:
     malice_sat_cube = sat_cube.apply_neighborhood(
         udf,
         size=[
-            {"dimension": "x", "value": parameters.patch_size, "unit": "px"},
-            {"dimension": "y", "value": parameters.patch_size, "unit": "px"},
+            {"dimension": "x", "value": parameters.patch_size - parameters.overlap*2, "unit": "px"},
+            {"dimension": "y", "value": parameters.patch_size - parameters.overlap*2, "unit": "px"},
         ],
         overlap=overlap,
     )
@@ -115,7 +116,7 @@ def process(parameters: Parameters, output: str) -> None:
         ],
     }
     download_job1 = malice_sat_cube.save_result("netCDF").create_job(
-        title="malice", job_options=job_options
+        title=f"malice_{parameters.satellite}", job_options=job_options
     )
 
     download_job1.start_and_wait()
@@ -124,8 +125,7 @@ def process(parameters: Parameters, output: str) -> None:
 
     download_job2 = malice_sat_cube.save_result("netCDF").create_job(title="sits-orig")
     download_job2.start_and_wait()
-    output = os.path.join(output, "original")
-    os.makedirs(output, exist_ok=True)
+    os.makedirs(os.path.join(output, "original"), exist_ok=True)
     download_job2.get_results().download_files(output)
 
 
@@ -204,11 +204,12 @@ def main(args):
         start_date=args.start_date,
         end_date=args.end_date,
         collection="SENTINEL2_L2A"
-        if args.satellite.lower()=="s2" else "SENTINEL1_GRD",
+        if args.satellite.lower() == "s2" else "SENTINEL1_GRD",
         satellite=args.satellite.lower(),
         output_file=args.output,
         overlap=args.overlap,
     )
+    print(parameters)
 
     _logger.info(f"Parameters : {parameters}")
     process(parameters, args.output)

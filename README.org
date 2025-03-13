@@ -10,7 +10,7 @@ The respository include the [[file:src/openeo_malice/udf.py][User Defined Functi
 
 * Installation
 #+begin_src shell
-$ pip install -e git+https://github.com/ekalinicheva/openeo_malice.git
+$ pip install -e git+https://github.com/Evoland-Land-Monitoring-Evolution/openeo_malice.git
 #+end_src
 
 * Usage
