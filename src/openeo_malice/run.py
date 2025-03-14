@@ -9,14 +9,13 @@ import logging
 import os
 import sys
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 from openeo import DataCube
 
 DEPENDENCIES_URL: str = (
     "https://artifactory.vgt.vito.be:443/auxdata-public/openeo/onnx_dependencies.zip"
 )
-
 
 import openeo
 
@@ -30,14 +29,15 @@ _logger = logging.getLogger(__name__)
 
 
 def default_bands_list(satellite: str) -> list[str]:
+    """Default bands for each satellite"""
     if satellite.lower() == "s2":
         return ["B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B11", "B12"]
-    else:
-        return ["VV", "VH"]
+    return ["VV", "VH"]
 
 
 @dataclass(frozen=True)
 class Parameters:
+    """Collection parameters"""
     spatial_extent: Dict[str, float]
     start_date: str
     end_date: str
@@ -59,7 +59,8 @@ def process(parameters: Parameters, output: str) -> None:
 
     # Search for the S2 datacube
     if parameters.satellite.lower() == "s2":
-        MODEL_URL: str = "https://artifactory.vgt.vito.be/artifactory/evoland/malice_models/malice_s2.zip"
+        MODEL_URL: str = \
+            "https://artifactory.vgt.vito.be/artifactory/evoland/malice_models/malice_s2.zip"
         sat_cube: DataCube = connection.load_collection(
             parameters.collection,
             spatial_extent=parameters.spatial_extent,
@@ -69,7 +70,8 @@ def process(parameters: Parameters, output: str) -> None:
             fetch_metadata=True
         )
     else:
-        MODEL_URL: str = "https://artifactory.vgt.vito.be/artifactory/evoland/malice_models/malice_s1.zip"
+        MODEL_URL: str = \
+            "https://artifactory.vgt.vito.be/artifactory/evoland/malice_models/malice_s1.zip"
         sat_cube: DataCube = connection.load_collection(
             parameters.collection,
             spatial_extent=parameters.spatial_extent,
@@ -99,13 +101,16 @@ def process(parameters: Parameters, output: str) -> None:
             {"dimension": "y", "value": parameters.overlap, "unit": "px"},
         ]
 
-
     # Process the cube with the UDF
     malice_sat_cube = sat_cube.apply_neighborhood(
         udf,
         size=[
-            {"dimension": "x", "value": parameters.patch_size - parameters.overlap*2, "unit": "px"},
-            {"dimension": "y", "value": parameters.patch_size - parameters.overlap*2, "unit": "px"},
+            {"dimension": "x",
+             "value": parameters.patch_size - parameters.overlap * 2,
+             "unit": "px"},
+            {"dimension": "y",
+             "value": parameters.patch_size - parameters.overlap * 2,
+             "unit": "px"},
         ],
         overlap=overlap,
         # context={"satellite": parameters.satellite.lower()}
