@@ -1,7 +1,7 @@
-# Copyright: (c) 2024 CESBIO / Centre National d'Etudes Spatiales
+# Copyright: (c) 2025 CESBIO / Centre National d'Etudes Spatiales
 
 """
-ProsailVAE embedding with OpenEO
+MALICE embeddings with OpenEO
 """
 
 import argparse
@@ -46,7 +46,7 @@ class Parameters:
     openeo_instance: str = "openeo.vito.be"
     collection: str = "SENTINEL2_L2A"
     satellite: str = "s2"
-    patch_size: int = 64
+    patch_size: int = 128
     overlap: Optional[int] = 0
 
 
@@ -108,12 +108,22 @@ def process(parameters: Parameters, output: str) -> None:
             {"dimension": "y", "value": parameters.patch_size - parameters.overlap*2, "unit": "px"},
         ],
         overlap=overlap,
+        # context={"satellite": parameters.satellite.lower()}
     )
     job_options = {
         "udf-dependency-archives": [
             f"{DEPENDENCIES_URL}#tmp/extra_venv",
             f"{MODEL_URL}#tmp/extra_files",
         ],
+        "executor-memory": "10G",
+        "executor-memoryOverhead": "20G",  # default 2G
+        "executor-cores": 2,
+        "task-cpus": 1,
+        "executor-request-cores": "400m",
+        "max-executors": "100",
+        "driver-memory": "16G",
+        "driver-memoryOverhead": "16G",
+        "driver-cores": 5,
     }
     download_job1 = malice_sat_cube.save_result("netCDF").create_job(
         title=f"malice_{parameters.satellite}", job_options=job_options
@@ -170,7 +180,7 @@ def parse_args(args):
     parser.add_argument(
         "--overlap",
         required=False,
-        default=3,
+        default=10,
         type=int,
         help="Overlap between patches to avoid border effects",
     )
