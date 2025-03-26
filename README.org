@@ -20,7 +20,7 @@ are denoted by ALISE^{S2} and ALISE^{S1}.
 #+BEGIN_QUOTE
 [1] I. Dumeur, S. Valero and J. Inglada, "Self-Supervised Spatio-Temporal Representation Learning of Satellite Image Time Series," in IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing, vol. 17, pp. 4350-4367, 2024, doi: 10.1109/JSTARS.2024.3358066.
 
-[2]I. Dumeur, S. Valero and J. Inglada, "Paving the way toward foundation models for irregular and unaligned Satellite Image Time Series," Submitted, July 2024.
+[2] I. Dumeur, S. Valero and J. Inglada, "Paving the way toward foundation models for irregular and unaligned Satellite Image Time Series," Submitted, July 2024.
 #+END_QUOTE
 
 The respository include the [[file:src/openeo_malice/udf_s2.py][User Defined Function for S2]] and [[file:src/openeo_malice/udf_s1_asc.py][User Defined Function for S1]]
