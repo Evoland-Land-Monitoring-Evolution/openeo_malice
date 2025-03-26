@@ -4,8 +4,23 @@
 
 This repository is part of the [[https://www.evo-land.eu/][EVOLAND Horizon Europe]] project.
 It provides a User Defined Function to extract Sentinel-2 or Sentinel-1 satellite image time series embeddings with MALICE model.
-The input time series can have any length, although the recommended length is between 6 and 18 months.
-The output embeddings have fixed size of (10 x 64) x H x W
+The input time series can have any temporal length, although the recommended length is between 6 and 18 months.
+The output embeddings have fixed size of (10 x 64) x H x W.
+
+[[file:artwork/malice_enc.png]]
+
+MALICE’s encoder architecture is a two-branch neural network where each branch processes a single modality by using spatial, spectral and temporal encoder (SSTE),
+which corresponds to the proposed U-BARN architecture (see~\cite{dumeur_ubarn}), and a temporal projector.
+The temporal projector produces aligned representations thanks to a cross-attention mechanism with learnable queries.
+Although the SSTE weights differ for each modality, a common temporal projector is shared between both branches. Hence, we consider that the two modalities
+are aligned on the same latent temporal features. The modality-specific encoders
+are denoted by $ALISE^{S2}$ and $ALISE^{S1}$.
+
+#+BEGIN_QUOTE
+[1] I. Dumeur, S. Valero and J. Inglada, "Self-Supervised Spatio-Temporal Representation Learning of Satellite Image Time Series," in IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing, vol. 17, pp. 4350-4367, 2024, doi: 10.1109/JSTARS.2024.3358066.
+
+[2]I. Dumeur, S. Valero and J. Inglada, "Paving the way toward foundation models for irregular and unaligned Satellite Image Time Series," Submitted, July 2024.
+#+END_QUOTE
 
 The respository include the [[file:src/openeo_malice/udf_s2.py][User Defined Function for S2]] and [[file:src/openeo_malice/udf_s1_asc.py][User Defined Function for S1]]
 implemented using a ONNX export of the best model, as well as a [[file:src/openeo_malice/run.py][runtime script]] allowing to use it with your OpenEO account.
