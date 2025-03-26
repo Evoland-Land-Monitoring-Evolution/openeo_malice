@@ -155,7 +155,7 @@ def parse_args(args):
       :obj:`argparse.Namespace`: command line parameters namespace
     """
     parser = argparse.ArgumentParser(
-        description="Run Single-Image prosailVAE embedding model on OpenEO and download results"
+        description="Run Multi-Temporal MALICE embedding model on OpenEO and download results"
     )
     parser.add_argument(
         "--version",
