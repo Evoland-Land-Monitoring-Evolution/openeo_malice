@@ -90,8 +90,8 @@ def process(parameters: Parameters, output: str) -> None:
             options=None,
         )
 
-    udf_file = os.path.join(os.path.dirname(__file__), f"udf_{parameters.satellite}.py")
-    udf = openeo.UDF.from_file(udf_file, runtime="Python-Jep")
+    udf_file = os.path.join(os.path.dirname(__file__), f"udf.py")
+    udf = openeo.UDF.from_file(udf_file, runtime="Python-Jep", context={"from_parameter": "context"})
 
     # Handle optional overlap parameter
     overlap = []
@@ -113,7 +113,7 @@ def process(parameters: Parameters, output: str) -> None:
              "unit": "px"},
         ],
         overlap=overlap,
-        # context={"satellite": parameters.satellite.lower()}
+        context={"satellite": parameters.satellite.lower()}
     )
     job_options = {
         "udf-dependency-archives": [
@@ -130,15 +130,17 @@ def process(parameters: Parameters, output: str) -> None:
         "driver-memoryOverhead": "16G",
         "driver-cores": 5,
     }
+
+    # Save the embeddings
     download_job1 = malice_sat_cube.save_result("netCDF").create_job(
         title=f"malice_{parameters.satellite}", job_options=job_options
     )
-
     download_job1.start_and_wait()
     os.makedirs(output, exist_ok=True)
     download_job1.get_results().download_files(output)
 
-    download_job2 = malice_sat_cube.save_result("netCDF").create_job(title="sits-orig")
+    # Save the original SITS
+    download_job2 = sat_cube.save_result("netCDF").create_job(title="sits-orig")
     download_job2.start_and_wait()
     os.makedirs(os.path.join(output, "original"), exist_ok=True)
     download_job2.get_results().download_files(output)

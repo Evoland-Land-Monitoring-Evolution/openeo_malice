@@ -3,7 +3,7 @@
 # Copyright: (c) 2025 CESBIO / Centre National d'Etudes Spatiales
 """
 Provide the user-defined function to call MALICE model
-for Sentinel-1 Ascending time series embeddings
+for Sentinel-2/Sentinel-1 time series embeddings
 """
 import sys
 from typing import Dict
@@ -49,6 +49,31 @@ def normalize_s1(input_data: np.ndarray) -> np.ndarray:
     return np.nan_to_num((input_data - med[None, :, None, None]) / scale[None, :, None, None])
 
 
+def normalize_s2(input_data: np.ndarray) -> np.ndarray:
+    """Clip and normalize S2 data"""
+    med = np.array([414.0, 675.0, 570.0, 1132.0, 2374.0, 2744.0, 2885.0, 3016.0, 2003.0, 1117.0])
+    qmin = np.array([130.0, 247.0, 168.0, 442.0, 907.0, 1044.0, 1069.0, 1160.0, 493.0, 299.0])
+    qmax = np.array([3780.0, 3704.0, 3554.0, 3885.0, 4644.0, 5296.0, 5478.0, 5494.0, 3747.0, 2892.0])
+    scale = np.array([float(x) - float(y) for x, y in zip(qmax, qmin)])
+    input_data = input_data.clip(qmin[None, :, None, None], qmax[None, :, None, None])
+    return np.nan_to_num((input_data - med[None, :, None, None]) / scale[None, :, None, None])
+
+
+def prepare_s2_input(input_data: np.ndarray, doy: np.ndarray) -> Dict[str, np.ndarray]:
+    """We transform input data in right format for the model"""
+
+    input_data = normalize_s2(input_data)
+
+    reference_date = "2014-03-03"
+
+    # Relative DOY to the reference date
+    doy = (pd.to_datetime(doy) - pd.to_datetime(reference_date)).days
+
+    return {"sits": input_data.astype(np.float32)[None, ...],
+            "tpe": np.array(doy)[None, ...].astype(np.float32),
+            "padd_mask": np.zeros((1, input_data.shape[0]), dtype=bool)}
+
+
 def prepare_s1_input(input_data: np.ndarray, doy: np.ndarray) -> Dict[str, np.ndarray]:
     """We transform input data in right format for the model"""
 
@@ -67,18 +92,17 @@ def prepare_s1_input(input_data: np.ndarray, doy: np.ndarray) -> Dict[str, np.nd
             "padd_mask": np.zeros((1, input_data.shape[0]), dtype=bool)}
 
 
-def run_inference(input_data: np.ndarray, doy: np.ndarray) -> np.ndarray:
+def run_inference(input_data: np.ndarray, doy: np.ndarray, satellite: str) -> np.ndarray:
     """
-    Inference function for Sentinel-1 embeddings with MALICE.
+    Inference function for Sentinel-2/Sentinel-1 embeddings with MALICE.
     The input should be in shape (B, C, H, W)
     The output shape is (10, 64, H, W)
     """
-
     # First get virtualenv
     sys.path.insert(0, "tmp/extra_venv")
     import onnxruntime as ort
 
-    model_file = "tmp/extra_files/malice_s1.onnx"
+    model_file = f"tmp/extra_files/malice_{satellite}.onnx"
 
     # ONNX inference session options
     so = ort.SessionOptions()
@@ -95,7 +119,10 @@ def run_inference(input_data: np.ndarray, doy: np.ndarray) -> np.ndarray:
     ro = ort.RunOptions()
     ro.add_run_config_entry("log_severity_level", "3")
 
-    input_model = prepare_s1_input(input_data, doy)
+    if satellite == "s2":
+        input_model = prepare_s2_input(input_data, doy)
+    else:  # satellite=="s1"
+        input_model = prepare_s1_input(input_data, doy)
 
     # Get the ouput of the exported model
     res = ort_session.run(None, input_model, run_options=ro)[0][0].astype(np.float32)
@@ -112,7 +139,9 @@ def apply_datacube(cube: XarrayDataCube, context: Dict) -> XarrayDataCube:
         cubearray = cube
     else:
         cubearray = cube.get_array().copy()
-    cube_collection = run_inference(cubearray.data, cubearray.t.values)
+
+    satellite = context["satellite"]
+    cube_collection = run_inference(cubearray.data, cubearray.t.values, satellite)
     # Build output data array
     predicted_cube = xr.DataArray(
         cube_collection,

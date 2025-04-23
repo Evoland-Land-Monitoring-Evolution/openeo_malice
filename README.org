@@ -23,7 +23,7 @@ are denoted by ALISE^{S2} and ALISE^{S1}.
 [2] I. Dumeur, S. Valero and J. Inglada, "Paving the way toward foundation models for irregular and unaligned Satellite Image Time Series," Submitted, July 2024.
 #+END_QUOTE
 
-The respository include the [[file:src/openeo_malice/udf_s2.py][User Defined Function for S2]] and [[file:src/openeo_malice/udf_s1_asc.py][User Defined Function for S1]]
+The respository include the [[file:src/openeo_malice/udf.py][User Defined Function]] for Sentinel-1/Sentinel-2 time series embeddings extraction
 implemented using a ONNX export of the best model, as well as a [[file:src/openeo_malice/run.py][runtime script]] allowing to use it with your OpenEO account.
 
 * Installation
@@ -36,7 +36,7 @@ $ pip install -e git+https://github.com/Evoland-Land-Monitoring-Evolution/openeo
 For Sentinel-1 Ascending embeddings:
 
 #+begin_src shell
-$ run_openeo_malice --satellite s1_asc --start_date 2020-07-05 --end_date 2020-09-30 --extent 5.1 5.12 51 51.02 --output results/
+$ run_openeo_malice --satellite s1_asc --start_date 2020-07-05 --end_date 2020-09-30 --extent 5.1 5.18 51.04 51.12 --output results/
 #+end_src
 
 For Sentinel-2 embeddings:
